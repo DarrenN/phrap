@@ -45,6 +45,10 @@ class FileUpload extends Model
 // a separate Master DB for writes.
 $file = new File($dbh);
 
+// Switch DB
+$dbh_write = new DB($database_write);
+$file->switch_connection($dbh_write);
+
 // Operate on an object directly
 $file->filename = 'heffalump.txt';
 
