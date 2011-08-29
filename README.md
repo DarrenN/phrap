@@ -18,8 +18,7 @@ $database = array(
 	'dbserver' => DBSERVER,
 	'dbuser'   => DBUSER,
 	'dbpasswd' => DBPASSWD,
-	'dbname'   => DBNAME,
-	'dbsalt'   => DBSALT
+	'dbname'   => DBNAME
 );
 $dbh = new DB($database);
 
@@ -41,6 +40,9 @@ class FileUpload extends Model
     }
 }
 
+// Pass the connection directly to model, this makes it easy to
+// switch connections if say, you have a Read-only Slave DB and
+// a separate Master DB for writes.
 $file = new File($dbh);
 
 // Operate on an object directly
@@ -78,5 +80,12 @@ $file->delete(1);
 // Set id in object then delete it
 $file->find('first');
 $file->delete();
+
+// Init (object constructor)
+public function init() - this code will run when the model is populated by DB results.
+
+// Virtual fields
+// Create calculated fields on the fly inside init();
+$this->virtual_field('file_hash', sha1($this->filename . $this->id));
 ?>
 ```
