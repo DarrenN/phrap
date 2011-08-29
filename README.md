@@ -7,7 +7,7 @@
 
 Read the tests in `/test/test.php` to get a general idea on how it works. It follows an ActiveRecord-ish pattern. There is no built in validation, etc. You can extend with your own logic for that.
 
-```(php)
+```php
 require 'DB.php';
 require 'Model.php';
 
