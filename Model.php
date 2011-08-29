@@ -23,13 +23,9 @@ class Model
     function __construct($database_connection = null)
     {
         if ($database_connection) {
-            //throw new Exception('No Database Connector');
-            if ($this->db = $database_connection->get_connection()) {
-                $this->cache_columns(); // cache metadata
-                if ($max = $this->get_max_id()) {
-                    self::$id_autoincrement = (int) $max;
-                }
-            };
+            if (!$this->switch_connection($database_connection)) {
+                throw new Exception("Cannot access DB");
+            }
         }
 
         $this->model = get_class($this);
@@ -41,6 +37,18 @@ class Model
         if (method_exists($this, 'init')) {
             $this->init(); // run any initializers in the models
         }
+    }
+
+    public function switch_connection($database_connection = null)
+    {
+        if ($this->db = $database_connection->get_connection()) {
+            $this->cache_columns(); // cache metadata
+            if ($max = $this->get_max_id()) {
+                self::$id_autoincrement = (int) $max;
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
