@@ -267,7 +267,7 @@ class Model
     /**
      * Do a raw SQL query with option of parameterized values (please use parameterized query)
      */
-    public function query($sql = null, $values = null)
+    public function query($sql = null, $values = null, $return = true)
     {
         if (!$sql || !$values) {
             return false;
@@ -281,7 +281,7 @@ class Model
          * placeholders ('SELECT name, colour, calories FROM fruit WHERE calories < ?')
          */
         if (is_array($values)) {
-            foreach ($values as $field => $value) {
+            foreach ($values as $field => &$value) {
                 $param_type = PDO::PARAM_STR;
                 if (is_int($value)) {
                     $param_type = PDO::PARAM_INT;
@@ -296,7 +296,13 @@ class Model
             $stmt->bindParam(1, $values, $param_type);
         }
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_CLASS, $this->model);
+        if ($stmt->rowCount() > 0) {
+            if ($return) {
+                return $stmt->fetchAll(PDO::FETCH_CLASS, $this->model);
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
