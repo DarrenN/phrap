@@ -7,7 +7,7 @@
 
 Read the tests in `/test/test.php` to get a general idea on how it works. It follows an ActiveRecord-ish pattern. There is no built in validation, etc. You can extend with your own logic for that.
 
-```php
+```(php)
 require 'DB.php';
 require 'Model.php';
 
@@ -40,19 +40,38 @@ class FileUpload extends Model
     }
 }
 
+$file = new File($dbh);
+
 // Operate on an object directly
-$file = new File($dbh);
 $file->filename = 'heffalump.txt';
-$file->save();
 
-$file = new File($dbh);
-
-// assigns the next id in autoincrement
+// assigns the next id in autoincrement and clears properties
 $file->create();
 
-// will not set object property for codswoddle as it is not a DB field.
+// Set mutiple properties at once, which are also filtered 
+// (codswoddle will not be set since it ain't a DB field.
 $file->set(array('filename' => 'heffalump.txt', 'codswoddle' => 'phiminster'));
 
+// Save
+$file->save();
 
+// Query
+$result = $file->find('first');
+$result = $file->find('all');
 
+// Query with conditions
+$result = $file->find('first', array('email' => 'dazza@email.com'));
+
+// Query with conditions & field whitelist
+$result = $file->find('first', array('email' => 'dazza@email.com'), array('id','email'));
+
+// Raw but Safe Query
+$result = $file->query('SELECT * FROM files WHERE email = :email ORDER BY userid LIMIT 1', array(':email' => 'dazza@email.com'));
+
+// Delete manually by id
+$file->delete(1);
+
+// Set id in object then delete it
+$file->find('first');
+$file->delete();
 ```
