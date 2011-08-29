@@ -65,8 +65,11 @@ $result = $file->find('first', array('email' => 'dazza@email.com'));
 // Query with conditions & field whitelist
 $result = $file->find('first', array('email' => 'dazza@email.com'), array('id','email'));
 
-// Raw but Safe Query
+// Raw but Safe Query with named paramter array
 $result = $file->query('SELECT * FROM files WHERE email = :email ORDER BY userid LIMIT 1', array(':email' => 'dazza@email.com'));
+
+// Raw but Safe Query with single string parameter
+$result = $file->query('SELECT * FROM files WHERE email = ? ORDER BY userid LIMIT 1', 'dazza@email.com');
 
 // Delete manually by id
 $file->delete(1);
