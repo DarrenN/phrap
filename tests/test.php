@@ -355,6 +355,50 @@ class ModelTest extends PHPUnit_Framework_TestCase
 	/**
 	 * @depends testDbConnection
 	 */
+	public function testQuery(DB $dbh)
+	{
+		$model = new TestModel($dbh);
+
+		// Make sure we get back a TestModel Object in result
+		$result = $model->query('SELECT * FROM test WHERE id = :id', array('id' => 4));
+		$this->assertNotEmpty($result);
+		$this->assertInternalType('array', $result);
+		$this->assertEquals(1, count($result));
+
+		$this->assertNotEmpty($result[0]);
+		$this->assertInternalType('object', $result[0]);
+		$this->assertInstanceOf('TestModel', $result[0]);
+
+		$this->assertEquals('4', $result[0]->id);
+		$this->assertEquals('appelschnapps.txt', $result[0]->filename);
+		$this->assertEquals('dazza@email.com', $result[0]->email);
+		$this->assertEquals('daf0ee72d921da625e5e08a0c13283830e610a6a', $result[0]->file_hash);
+
+		// Make a failing query
+		$result = $model->query('SELECT * FROM test WHERE id = :id', array('id' => 40));
+		$this->assertFalse($result);
+
+		// Make a non-returning query (INSERT, REPLACE INTO, etc)
+		$values = array(
+			'id' => 4,
+			'filename' => 'mule.txt',
+			'email' => 'gazza@email.com'
+			);
+		$result = $model->query('REPLACE INTO test SET id = :id, email = :email, filename = :filename', $values, false);
+		$this->assertTrue($result);
+
+		// Now test that the REPLACE INTO query worked
+		$result = $model->find('first',array('id' => 4));
+		$this->assertNotEmpty($result[0]);
+		$this->assertEquals('4', $result[0]->id);
+		$this->assertEquals('mule.txt', $result[0]->filename);
+		$this->assertEquals('gazza@email.com', $result[0]->email);
+
+	}
+
+	/**
+	 * @depends testDbConnection
+	 */
 	public function testDelete(DB $dbh)
 	{
 		$model = new TestModel($dbh);

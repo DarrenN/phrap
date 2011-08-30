@@ -78,6 +78,14 @@ $result = $file->query('SELECT * FROM files WHERE email = :email ORDER BY userid
 // Raw but Safe Query with single string parameter
 $result = $file->query('SELECT * FROM files WHERE email = ? ORDER BY userid LIMIT 1', 'dazza@email.com');
 
+// Use Raw query to operate on db rows, returns true/false
+$values = array(
+    'id'       => 4,
+    'filename' => 'mule.txt',
+    'email'    => 'gazza@email.com'
+    );
+$result = $model->query('REPLACE INTO test SET id = :id, email = :email, filename = :filename', $values, false);
+
 // Delete manually by id
 $file->delete(1);
 
