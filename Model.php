@@ -241,7 +241,7 @@ class Model
 
         // Build PDO params
         if ($conditions) {
-            foreach ($pdo_params as $field => $value) {
+            foreach ($pdo_params as $field => &$value) {
                 $stmt->bindParam($field, $value, PDO::PARAM_STR);
             }
         }
