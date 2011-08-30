@@ -33,10 +33,6 @@ class Model
         if (!$this->table) {
             $this->table = strtolower($this->model);
         }
-
-        if (method_exists($this, 'init')) {
-            $this->init(); // run any initializers in the models
-        }
     }
 
     public function switch_connection($database_connection = null)
@@ -138,26 +134,40 @@ class Model
         return true;
     }
 
-    /**
+     /**
      * Removes non-DB related fields from results sets
      */
-    private function clean_fields($result)
+    private function clean_fields($result, $single = false)
     {
-        if (count($result) === 1) {
-            $fields = array_flip(array_merge($this->field_names, $result[0]->virtual_fields));            
-            $object_fields = get_object_vars($result[0]);
+        if ($single) {   
+            $fields = array_flip(array_merge($this->field_names, $result->virtual_fields));            
+            $object_fields = get_object_vars($result);
             foreach ($object_fields as $property => $val) {
-                if (!isset($fields[$property])) {
-                    unset($result[0]->$property);
+                // Remove null values
+                if (is_null($result->$property)) {
+                    unset($result->$property);
                 }
+                // Remove non-db related fields
+                // if (!isset($fields[$property])) {
+                //     unset($result->$property);
+                // }
             }
             return $result;
         } else {
+            if (method_exists($result[0], 'init')) {
+                $has_init = true;
+                $result[0]->init(); // run any initializers in the models
+            }
             $fields = array_flip(array_merge($this->field_names, $result[0]->virtual_fields));            
             $object_fields = get_object_vars($result[0]);
             $out = array();
             foreach ($result as $r) {
                 foreach ($object_fields as $property => $val) {
+                    // Remove null values
+                    if ($has_init) { $r->init(); }
+                    if (is_null($r->$property)) {
+                        unset($r->$property);
+                    }
                     if (!isset($fields[$property])) {
                         unset($r->$property);
                     }
@@ -197,10 +207,10 @@ class Model
         $query_conditions = "";
 
         // Build fields
-        if (!is_array($fields)) {
-            $fields = "*";
-        } else {
+        if (is_array($fields)) {
             $fields = implode(', ', $fields);
+        } else {
+            $fields = "*";
         }
 
         // Build conditions
@@ -250,17 +260,29 @@ class Model
         }
 
         $stmt->execute();
-        $result = $stmt->fetchAll(PDO::FETCH_CLASS, $this->model);
 
-        if ($stmt->rowCount() === 0) {
-          return $result;
-        } 
+        /**
+         * For a single record we grab vanilla Objects and
+         * then load the fields into our model
+         */
+        if ($type == 'first') {
+            $result = $stmt->fetch(PDO::FETCH_OBJ);
+            if ($stmt->rowCount() === 0) {
+                return false;
+            } 
 
-        if ($type == 'first') {            
-            $this->set($result);
-            return $this->clean_fields($result);
+            $fields = get_object_vars($result);
+            foreach ($fields as $prop => $value) {
+                $this->$prop = $value;
+            }
+
+            if (method_exists($this, 'init')) {
+                $this->init(); // run any initializers in the models
+            }
+            return $this->clean_fields($this, true);
         }
 
+        $result = $stmt->fetchAll(PDO::FETCH_CLASS, $this->model);
         return $this->clean_fields($result);
     }
 
@@ -298,7 +320,8 @@ class Model
         $stmt->execute();
         if ($stmt->rowCount() > 0) {
             if ($return) {
-                return $stmt->fetchAll(PDO::FETCH_CLASS, $this->model);
+                $result = $stmt->fetchAll(PDO::FETCH_CLASS, $this->model);
+                return $this->clean_fields($result);
             }
             return true;
         }

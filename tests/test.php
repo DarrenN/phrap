@@ -230,14 +230,12 @@ class ModelTest extends PHPUnit_Framework_TestCase
 		// Make sure we get back a TestModel Object in result
 		$result = $model->find('first');
 		$this->assertNotEmpty($result);
-		$this->assertInternalType('array', $result);
-		$this->assertNotEmpty($result[0]);
-		$this->assertInternalType('object', $result[0]);
-		$this->assertInstanceOf('TestModel', $result[0]);
-		$this->assertEquals('3', $result[0]->id);
-		$this->assertEquals('flaneur.txt', $result[0]->filename);
-		$this->assertEquals('info@email.com', $result[0]->email);
-		$this->assertEquals('95985b32e8401aed3143a6c090dfca6c969fbf76', $result[0]->file_hash);
+		$this->assertInternalType('object', $result);
+		$this->assertInstanceOf('TestModel', $result);
+		$this->assertEquals('3', $result->id);
+		$this->assertEquals('flaneur.txt', $result->filename);
+		$this->assertEquals('info@email.com', $result->email);
+		$this->assertEquals('95985b32e8401aed3143a6c090dfca6c969fbf76', $result->file_hash);
 		
 		// Now lets check object itself as it should have been populated
 		$this->assertEquals('3', $model->id);
@@ -256,14 +254,12 @@ class ModelTest extends PHPUnit_Framework_TestCase
 		// Make sure we get back a TestModel Object in result
 		$result = $model->find('first', array('email' => 'dazza@email.com'));
 		$this->assertNotEmpty($result);
-		$this->assertInternalType('array', $result);
-		$this->assertNotEmpty($result[0]);
-		$this->assertInternalType('object', $result[0]);
-		$this->assertInstanceOf('TestModel', $result[0]);
-		$this->assertEquals('4', $result[0]->id);
-		$this->assertEquals('appelschnapps.txt', $result[0]->filename);
-		$this->assertEquals('dazza@email.com', $result[0]->email);
-		$this->assertEquals('daf0ee72d921da625e5e08a0c13283830e610a6a', $result[0]->file_hash);
+		$this->assertInternalType('object', $result);
+		$this->assertInstanceOf('TestModel', $result);
+		$this->assertEquals('4', $result->id);
+		$this->assertEquals('appelschnapps.txt', $result->filename);
+		$this->assertEquals('dazza@email.com', $result->email);
+		$this->assertEquals('daf0ee72d921da625e5e08a0c13283830e610a6a', $result->file_hash);
 		
 		// Now lets check object itself as it should have been populated
 		$this->assertEquals('4', $model->id);
@@ -282,22 +278,13 @@ class ModelTest extends PHPUnit_Framework_TestCase
 		// Make sure we get back a TestModel Object in result
 		$result = $model->find('first', array('email' => 'dazza@email.com'), array('id','email'));
 		$this->assertNotEmpty($result);
-		$this->assertInternalType('array', $result);
-		$this->assertNotEmpty($result[0]);
-		$this->assertInternalType('object', $result[0]);
-		$this->assertInstanceOf('TestModel', $result[0]);
-		$this->assertEquals('4', $result[0]->id);
-		$this->assertEquals('dazza@email.com', $result[0]->email);
-		$this->assertObjectHasAttribute('filename', $result[0]);
-		$this->assertNull($result[0]->filename);
-		$this->assertObjectNotHasAttribute('file_hash', $result[0]);
-		
-		// Now lets check object itself as it should have been populated
-		$this->assertEquals('4', $model->id);
-		$this->assertObjectHasAttribute('filename', $model);
-		$this->assertNull($model->filename);
-		$this->assertEquals('dazza@email.com', $model->email);
-		$this->assertObjectNotHasAttribute('file_hash', $model);
+		$this->assertInternalType('object', $result);
+		$this->assertInstanceOf('TestModel', $result);
+		$this->assertEquals('4', $result->id);
+		$this->assertEquals('dazza@email.com', $result->email);
+		$this->assertObjectHasAttribute('filename', $result);
+		$this->assertObjectNotHasAttribute('file_hash', $result);
+
 			
 	}
 
@@ -389,10 +376,10 @@ class ModelTest extends PHPUnit_Framework_TestCase
 
 		// Now test that the REPLACE INTO query worked
 		$result = $model->find('first',array('id' => 4));
-		$this->assertNotEmpty($result[0]);
-		$this->assertEquals('4', $result[0]->id);
-		$this->assertEquals('mule.txt', $result[0]->filename);
-		$this->assertEquals('gazza@email.com', $result[0]->email);
+		$this->assertNotEmpty($result);
+		$this->assertEquals('4', $result->id);
+		$this->assertEquals('mule.txt', $result->filename);
+		$this->assertEquals('gazza@email.com', $result->email);
 
 	}
 
