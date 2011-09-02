@@ -1,6 +1,7 @@
 <?php
+require 'Inflect.php';
 /**
- * Simple PDO Model
+ * Phrap - A Simple PDO Model
  *
  * Handles basic CRUD using PDO, also uses APC to cache metadata.
  * Doesn't handle joins or associations.
@@ -9,29 +10,38 @@
 class Model
 {
     private $db;
-    private $apc           = false;
-    private $is_new        = false;
+    private $apc    = false;
+    private $is_new = false;
 
     private static $id_autoincrement = 0;
 
+    protected $model;
+    protected $table;
+    protected $field_names;
+    protected $virtual_fields = array();
+
     public $error;
-    public $model;
-    public $table;
     public $data;
-    public $virtual_fields = array();
 
     function __construct($database_connection = null)
     {
         if ($database_connection) {
+
+            $this->model = get_class($this);
+        
+            // If not explcitly set, then try to guess the table name
+            // using the ActiveRecord / Rails pluralization style
+            if (!$this->table) {
+                if (class_exists('Inflect')) {
+                    $this->table = Inflect::pluralize(strtolower($this->model));
+                } else {
+                    $this->table = strtolower($this->model);
+                }
+            }
+
             if (!$this->switch_connection($database_connection)) {
                 throw new Exception("Cannot access DB");
             }
-        }
-
-        $this->model = get_class($this);
-
-        if (!$this->table) {
-            $this->table = strtolower($this->model);
         }
     }
 
@@ -139,8 +149,9 @@ class Model
      */
     private function clean_fields($result, $single = false)
     {
-        if ($single) {   
-            $fields = array_flip(array_merge($this->field_names, $result->virtual_fields));            
+        if ($single) {
+            $protected     = array('table', 'db', 'virtual_fields', 'field_names');
+            $fields        = array_flip(array_merge($this->field_names, $result->virtual_fields, $protected));
             $object_fields = get_object_vars($result);
             foreach ($object_fields as $property => $val) {
                 // Remove null values
@@ -148,31 +159,41 @@ class Model
                     unset($result->$property);
                 }
                 // Remove non-db related fields
-                // if (!isset($fields[$property])) {
-                //     unset($result->$property);
-                // }
+                if (!isset($fields[$property])) {
+                    unset($result->$property);
+                }
             }
             return $result;
         } else {
+            // Memoize the virtual fields by init-ing the first result if it has
+            // an init method.
+            $has_init = false;
             if (method_exists($result[0], 'init')) {
                 $has_init = true;
                 $result[0]->init(); // run any initializers in the models
             }
-            $fields = array_flip(array_merge($this->field_names, $result[0]->virtual_fields));            
+            $protected     = array('table', 'db', 'virtual_fields', 'field_names');
+            $fields        = array_flip(array_merge($this->field_names, $result[0]->virtual_fields, $protected));            
             $object_fields = get_object_vars($result[0]);
-            $out = array();
+            $out           = array();
+            $count         = 0;
             foreach ($result as $r) {
+                if (($count > 0) && $has_init) {
+                    $r->init(); // run any initializers in the model if present
+                }
                 foreach ($object_fields as $property => $val) {
                     // Remove null values
-                    if ($has_init) { $r->init(); }
-                    if (is_null($r->$property)) {
-                        unset($r->$property);
+                    if (isset($r->$property)) {
+                        if (is_null($r->$property)) {
+                            unset($r->$property);
+                        }
                     }
                     if (!isset($fields[$property])) {
                         unset($r->$property);
                     }
                 }
                 $out[] = $r;
+                $count++;
             }
             return $out;
         }

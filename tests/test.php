@@ -92,15 +92,6 @@ class ModelTest extends PHPUnit_Framework_TestCase
 	/**
 	 * @depends testModelInstance
 	 */
-	public function testModelFieldNames(TestModel $model)
-	{
-		$this->assertObjectHasAttribute('field_names', $model);
-		$this->assertNotEmpty($model->field_names);
-	}
-
-	/**
-	 * @depends testModelInstance
-	 */
 	public function testModelProperties(TestModel $model)
 	{
 		$this->assertNull($model->userid);
@@ -393,7 +384,9 @@ class ModelTest extends PHPUnit_Framework_TestCase
 		$this->assertTrue($model->delete(3));
 		$this->assertFalse($model->delete(42));
 
+
 		$model->find('first');
+
 		$this->assertEquals('4', $model->id);
 		$this->assertTrue($model->delete());
 		$this->assertFalse($model->delete());
