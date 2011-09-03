@@ -168,12 +168,14 @@ class Model
             // Memoize the virtual fields by init-ing the first result if it has
             // an init method.
             $has_init = false;
+            $virtual_fields = array();
             if (method_exists($result[0], 'init')) {
                 $has_init = true;
                 $result[0]->init(); // run any initializers in the models
+                $virtual_fields = $result[0]->virtual_fields;
             }
             $protected     = array('table', 'db', 'virtual_fields', 'field_names');
-            $fields        = array_flip(array_merge($this->field_names, $result[0]->virtual_fields, $protected));            
+            $fields        = array_flip(array_merge($this->field_names, $virtual_fields, $protected));            
             $object_fields = get_object_vars($result[0]);
             $out           = array();
             $count         = 0;
