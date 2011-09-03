@@ -99,6 +99,15 @@ class ModelTest extends PHPUnit_Framework_TestCase
 	/**
 	 * @depends testModelInstance
 	 */
+	public function testModelVisbility(TestModel $model) {
+		 $this->assertObjectHasAttribute('field_names', $model);
+		 $this->assertObjectHasAttribute('virtual_fields', $model);
+		 $this->assertClassHasStaticAttribute('id_autoincrement', 'Model');
+	}	
+
+	/**
+	 * @depends testModelInstance
+	 */
 	public function testModelProperties(TestModel $model)
 	{
 		$this->assertNull($model->userid);
@@ -239,7 +248,7 @@ class ModelTest extends PHPUnit_Framework_TestCase
 		$this->assertEquals('3', $model->id);
 		$this->assertEquals('flaneur.txt', $model->filename);
 		$this->assertEquals('info@email.com', $model->email);
-		$this->assertEquals('95985b32e8401aed3143a6c090dfca6c969fbf76', $model->file_hash);		
+		$this->assertEquals('95985b32e8401aed3143a6c090dfca6c969fbf76', $model->file_hash);	
 	}
 
 	/**
@@ -282,8 +291,6 @@ class ModelTest extends PHPUnit_Framework_TestCase
 		$this->assertEquals('dazza@email.com', $result->email);
 		$this->assertObjectHasAttribute('filename', $result);
 		$this->assertObjectNotHasAttribute('file_hash', $result);
-
-			
 	}
 
 	/**
@@ -309,7 +316,7 @@ class ModelTest extends PHPUnit_Framework_TestCase
 		$this->assertInternalType('array', $result);
 		$this->assertEquals(2, count($result));
 
-		// Check some values
+		// Check some virtual field values
 		$this->assertEquals('95985b32e8401aed3143a6c090dfca6c969fbf76', $result[0]->file_hash);
 		$this->assertEquals('daf0ee72d921da625e5e08a0c13283830e610a6a', $result[1]->file_hash);
 	}
