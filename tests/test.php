@@ -319,6 +319,15 @@ class ModelTest extends PHPUnit_Framework_TestCase
 		// Check some virtual field values
 		$this->assertEquals('95985b32e8401aed3143a6c090dfca6c969fbf76', $result[0]->file_hash);
 		$this->assertEquals('daf0ee72d921da625e5e08a0c13283830e610a6a', $result[1]->file_hash);
+
+		$result = $model->all();
+		$this->assertNotEmpty($result);
+		$this->assertInternalType('array', $result);
+		$this->assertEquals(2, count($result));
+
+		// Check some virtual field values
+		$this->assertEquals('95985b32e8401aed3143a6c090dfca6c969fbf76', $result[0]->file_hash);
+		$this->assertEquals('daf0ee72d921da625e5e08a0c13283830e610a6a', $result[1]->file_hash);
 	}
 
 	/**
@@ -342,6 +351,42 @@ class ModelTest extends PHPUnit_Framework_TestCase
 		$this->assertEquals('appelschnapps.txt', $result[0]->filename);
 		$this->assertEquals('dazza@email.com', $result[0]->email);
 		$this->assertEquals('daf0ee72d921da625e5e08a0c13283830e610a6a', $result[0]->file_hash);
+	}
+
+	/**
+	 * @depends testDbConnection
+	 */
+	public function testFirst(DB $dbh)
+	{
+		$model = new TestModel($dbh);
+		$result = $model->first();
+		$this->assertNotEmpty($result);
+		$this->assertInternalType('object', $result);
+		$this->assertInstanceOf('TestModel', $result);
+	}
+
+	/**
+	 * @depends testDbConnection
+	 */
+	public function testFirstWithConditions(DB $dbh)
+	{
+		$model = new TestModel($dbh);
+		$result = $model->first(array('id' => 3));
+		$this->assertEquals('3', $result->id);
+		$this->assertEquals('flaneur.txt', $result->filename);
+		$this->assertEquals('info@email.com', $result->email);
+		$this->assertEquals('95985b32e8401aed3143a6c090dfca6c969fbf76', $result->file_hash);
+	}
+
+	/**
+	 * @depends testDbConnection
+	 */
+	public function testFirstWithFields(DB $dbh)
+	{
+		$model = new TestModel($dbh);
+		$result = $model->first(null, array('id', 'filename'));
+		$this->assertEquals('3', $result->id);
+		$this->assertEquals('flaneur.txt', $result->filename);
 	}
 
 	/**

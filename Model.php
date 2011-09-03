@@ -310,6 +310,22 @@ class Model
     }
 
     /**
+     * Find a single record with/without conditions
+     */
+    public function first($conditions = null, $fields = null)
+    {
+        return $this->find('first', $conditions, $fields);
+    }
+
+    /**
+     * Convenience method for find all
+     */
+    public function all($conditions = null, $fields = null, $order = null)
+    {
+        return $this->find('all', $conditions, $fields, $order);
+    }
+
+    /**
      * Do a raw SQL query with option of parameterized values (please use parameterized query)
      */
     public function query($sql = null, $values = null, $return = true)
