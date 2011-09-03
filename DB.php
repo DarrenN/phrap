@@ -1,9 +1,9 @@
 <?php
 
-const DBSERVER = '';
-const DBUSER   = '';
+const DBSERVER = '127.0.0.1';
+const DBUSER   = 'test';
 const DBPASSWD = '';
-const DBNAME   = '';
+const DBNAME   = 'test';
 const DBSALT   = '';
 
 class DB {

@@ -35,11 +35,18 @@ class ModelTest extends PHPUnit_Framework_TestCase
 		);
 		$dbh = new DB($database);
 		$db = $dbh->get_connection();
-		$sql = "DELETE FROM test WHERE id > 0";
-		$stmt = $db->prepare($sql);
-		$stmt->execute();
 
-		$sql = "TRUNCATE test";
+		$sql = "
+	DROP TABLE `test`;
+	CREATE TABLE `test` (
+	  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+	  `filename` varchar(255) DEFAULT NULL,
+	  `userid` int(11) DEFAULT NULL,
+	  `email` varchar(312) DEFAULT NULL,
+	  PRIMARY KEY (`id`),
+	  UNIQUE KEY `uq_email` (`email`)
+	) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+	";
 		$stmt = $db->prepare($sql);
 		$stmt->execute();
 
