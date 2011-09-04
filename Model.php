@@ -12,6 +12,13 @@ class Model
     private $db;
     private $apc    = false;
     private $is_new = false;
+    private $q_order;
+    private $q_limit;
+    private $q_offset;
+    private $q_direction;
+    private $q_conditions;
+    private $q_conditions_params = array();
+    private $q_fields = "*";
 
     private static $id_autoincrement = 0;
 
@@ -21,7 +28,8 @@ class Model
     protected $virtual_fields = array();
 
     public $error;
-    public $data;
+    public $id;
+    public $values;
 
     function __construct($database_connection = null)
     {
@@ -309,21 +317,21 @@ class Model
         return $this->clean_fields($result);
     }
 
-    /**
-     * Find a single record with/without conditions
-     */
-    public function first($conditions = null, $fields = null)
-    {
-        return $this->find('first', $conditions, $fields);
-    }
+    // /**
+    //  * Find a single record with/without conditions
+    //  */
+    // public function first($conditions = null, $fields = null)
+    // {
+    //     return $this->find('first', $conditions, $fields);
+    // }
 
-    /**
-     * Convenience method for find all
-     */
-    public function all($conditions = null, $fields = null, $order = null)
-    {
-        return $this->find('all', $conditions, $fields, $order);
-    }
+    // /**
+    //  * Convenience method for find all
+    //  */
+    // public function all($conditions = null, $fields = null, $order = null)
+    // {
+    //     return $this->find('all', $conditions, $fields, $order);
+    // }
 
     /**
      * Do a raw SQL query with option of parameterized values (please use parameterized query)
@@ -569,5 +577,223 @@ class Model
         $pieces = explode(' ', $condition);
         return array('operator' => $pieces[0], 'condition' => $pieces[1]);              
     }
+
+    // NEW STUFF
+
+    /**
+     * Set ID on model
+     */
+    public function id($id = null)
+    {
+        if ($id) {
+            $this->id = $id;
+        }
+        return $this;
+    }
+
+    /**
+     * Set LIMIT
+     */
+    public function limit($limit = null, $offset = null)
+    {
+        if ($limit) {
+            $this->q_limit = (int) $limit;
+        }
+
+        if ($offset) {
+            $this->q_offset = (int) $offset;
+        } else {
+            $this->q_offset = null;
+        }
+        return $this;
+    }
+
+    /**
+     * set ORDER
+     */
+    public function order($order = null)
+    {
+        if ($order) {
+            $this->q_order = preg_replace('/\W /', '', $order);
+        } else {
+            $this->q_order = null;
+        }
+        return $this;
+    }
+
+    /**
+     * Set conditions
+     */
+    public function filter($conditions = null)
+    {
+        if ($conditions && is_array($conditions)) {
+            $this->process_conditions($conditions);
+        } else {
+            $this->q_conditions = null;
+        }
+        return $this;
+    }
+
+    /**
+     * Set the columns you want retrieved (fields)
+     */
+    public function get($fields = null)
+    {
+        if ($fields) {
+            if (is_array($fields)) {
+                $this->q_fields = implode(', ', $fields);
+            } else {
+                $this->q_fields = $fields;
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * Alias for get
+     */
+    public function columns($fields = null)
+    {
+        $this->get($fields);
+    }
+
+    /**
+     * Get all records - no Limit
+     */
+    public function all()
+    {
+        $this->q_limit = null;
+        return $this;
+    }
+
+    /**
+     * Get first record - LIMIT = 1
+     */
+    public function first()
+    {
+        $this->q_limit = 1;
+        $this->q_direction = null;
+        return $this;
+    }
+
+    public function last()
+    {
+        $this->q_limit = 1;
+        $this->q_direction = ' DESC';
+        return $this;
+    }
+
+    /**
+     * Process a $conditions array
+     */
+    public function process_conditions($conditions = null)
+    {
+        $count = 0;
+        $pdo_params = array(); // used to bindParams to PDO statement
+        foreach ($conditions as $tbl_field => $tbl_condition) {
+            $operator = $this->process_tbl_condition($tbl_condition);
+
+            // Build query string
+            $this->q_conditions .= "$tbl_field {$operator['operator']} :$tbl_field";
+            if ($count < count($conditions) - 1) {
+                $this->q_conditions .= " AND ";
+            }
+
+            $this->q_conditions_params[':'.$tbl_field] = $operator['condition'];
+            $count++;
+        }
+
+    }
+
+    /**
+     * Assemble SQL and bang DB
+     */
+    public function exec()
+    {
+        $sql = "SELECT $this->q_fields FROM $this->table";
+
+        if ($this->q_conditions) {
+            $sql .=  " WHERE $this->q_conditions";
+        }
+
+        if ($this->q_order) {
+            $sql .=  " ORDER BY $this->q_order";
+        }
+
+        if ($this->q_direction) {
+            $sql .=  "$this->q_direction";
+        }
+
+        if ($this->q_limit) {
+            $sql .=  " LIMIT :limit";
+        }
+
+        if ($this->q_offset) {
+            $sql .=  " OFFSET :offset";
+        }
+
+        $stmt = $this->db->prepare($sql);
+
+        // Build PDO params
+        if ($this->q_conditions && $this->q_conditions_params) {
+            foreach ($this->q_conditions_params as $field => &$value) {
+                $stmt->bindParam($field, $value, PDO::PARAM_STR);
+            }
+        }
+        if ($this->q_limit) {
+            $stmt->bindParam(':limit', $this->q_limit, PDO::PARAM_INT);
+        }
+        if ($this->q_offset) {
+            $stmt->bindParam(':offset', $this->q_offset, PDO::PARAM_INT);
+        }
+
+        $stmt->execute();
+
+        if ($this->q_limit && $this->q_limit == 1) {
+            $result = $stmt->fetchObject($this->model);
+            if (method_exists($result, 'init')) {
+                $result->init();
+            }
+        } else {
+            $results = $stmt->fetchAll(PDO::FETCH_CLASS, $this->model);
+            foreach ($results as $result) {
+                if (method_exists($result, 'init')) {
+                    $result->init();
+                }
+            }
+            $result = $results;
+        }
+
+        var_dump($result);
+    }
+
+    /**
+     * Attribute getter - for query params set with id, limit, etc...
+     */
+    public function attr($key = null)
+    {
+        $map = array(
+                'limit'      => 'q_limit',
+                'order'      => 'q_order',
+                'filter'     => 'q_conditions',
+                'conditions' => 'q_conditions',
+                'fields'     => 'q_fields',
+                'columns'    => 'q_fields',
+                'offset'    => 'q_offset'
+            );
+        if ($key) {
+            if (isset($map[$key])) {
+                if (isset($this->$map[$key])) {
+                    return $this->$map[$key];
+                }
+            } else {
+                if (isset($this->$key)) {
+                    return $this->$key;
+                }
+            }
+        }
+    }
+
+
 }
 ?>
