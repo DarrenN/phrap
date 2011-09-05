@@ -1,10 +1,17 @@
 <?php
-
-const DBSERVER = '127.0.0.1';
-const DBUSER   = 'test';
-const DBPASSWD = '';
-const DBNAME   = 'test';
-const DBSALT   = '';
+/**
+ * DB CONNECTION CONSTANTS
+ * 
+ * const DBSERVER = '127.0.0.1';
+ * const DBUSER   = 'your_db_user';
+ * const DBPASSWD = 'your_db_password';
+ * const DBNAME   = 'your_db_name';
+ *
+ * for testing we load them from .connection
+ */
+if (file_exists('.connection')) {
+	include('.connection');
+}
 
 class DB {
 	private $dbh;
