@@ -443,30 +443,21 @@ class ModelTest extends PHPUnit_Framework_TestCase
 	/**
 	 * @depends testDbConnection
 	 */
-	public function testFindOneConditionsFields(DB $dbh)
+	public function testFindBadConditions(DB $dbh)
 	{
 		$model = new TestModel($dbh);
 
-		// Make sure we get back a TestModel Object in result
-		$result = $model->find('first', array('email' => 'dazza@email.com'), array('id','email'));
-		$this->assertNotEmpty($result);
-		$this->assertInternalType('object', $result);
-		$this->assertInstanceOf('TestModel', $result);
-		$this->assertEquals('4', $result->id);
-		$this->assertEquals('dazza@email.com', $result->email);
-		$this->assertObjectHasAttribute('filename', $result);
-		$this->assertObjectNotHasAttribute('file_hash', $result);
-	}
+		// Bad Queries
+		$model->first(array('email' => 'heffalump@email.com'));
+		$result = $model->exec();
+		$this->assertEmpty($result);
 
-	/**
-	 * @depends testDbConnection
-	 */
-	public function testFindOneBadConditions(DB $dbh)
-	{
-		$model = new TestModel($dbh);
+		$model->reset()->last(array('email' => 'heffalump@email.com'));
+		$result = $model->exec();
+		$this->assertEmpty($result);
 
-		// Bad Query
-		$result = $model->find('first', array('email' => 'heffalump@email.com'));
+		$model->reset()->all(array('email' => 'heffalump@email.com'));
+		$result = $model->exec();
 		$this->assertEmpty($result);
 	}
 

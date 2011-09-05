@@ -33,7 +33,8 @@ class Model
                 'conditions' => 'q_conditions',
                 'fields'     => 'q_fields',
                 'columns'    => 'q_fields',
-                'offset'     => 'q_offset'
+                'offset'     => 'q_offset',
+                'direction'  => 'q_direction'
                 );
 
     public $error;
