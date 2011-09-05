@@ -26,6 +26,15 @@ class Model
     protected $table;
     protected $field_names;
     protected $virtual_fields = array();
+    protected $q_map = array(
+                'limit'      => 'q_limit',
+                'order'      => 'q_order',
+                'filter'     => 'q_conditions',
+                'conditions' => 'q_conditions',
+                'fields'     => 'q_fields',
+                'columns'    => 'q_fields',
+                'offset'     => 'q_offset'
+                );
 
     public $error;
     public $id;
@@ -832,15 +841,7 @@ class Model
      */
     public function attr($key = null)
     {
-        $map = array(
-                'limit'      => 'q_limit',
-                'order'      => 'q_order',
-                'filter'     => 'q_conditions',
-                'conditions' => 'q_conditions',
-                'fields'     => 'q_fields',
-                'columns'    => 'q_fields',
-                'offset'     => 'q_offset'
-            );
+        $map = $this->q_map;
         if ($key) {
             if (isset($map[$key])) {
                 if (isset($this->$map[$key])) {
@@ -852,6 +853,22 @@ class Model
                 }
             }
         }
+    }
+
+    /**
+     * Clear the query settings from the object (reset)
+     */
+    public function reset()
+    {
+        foreach ($this->q_map as $k => $property) {
+            if (isset($this->$property)) {
+                $this->$property = null;
+            }
+        }
+        $this->q_conditions_params = null;
+        $this->id                  = null;
+        $this->q_fields            = "*";
+        return $this;
     }
 
 
