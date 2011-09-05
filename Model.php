@@ -651,7 +651,7 @@ class Model
     {
         if ($fields) {
             if (is_array($fields)) {
-                $this->q_fields = implode(', ', $fields);
+                  $this->q_fields = implode(', ', $fields);
             } else {
                 $this->q_fields = $fields;
             }
@@ -786,32 +786,40 @@ class Model
             $stmt->bindParam(':offset', $this->q_offset, PDO::PARAM_INT);
         }
 
-        $stmt->execute();
-
         /**
-         * Single result is a model object containing just the
-         * fields from the query (no NULLs).
-         *
-         * Multiple results come back as an array of model objects
+         * Attempt to execute the query or catch the exception
+         * and store the error msg in the model for retrieval
          */
-        if ($this->q_limit && $this->q_limit == 1) {
-            $result = $stmt->fetchObject($this->model);
-            if (method_exists($result, 'init')) {
-                $result->init();
-            }
-            return $result = $this->clean_values($result);
-        } else {
-            $results = $stmt->fetchAll(PDO::FETCH_CLASS, $this->model);
-            foreach ($results as $result) {
-                if (method_exists($result, 'init')) {
-                    $result->init();
+        try {
+            if ($stmt->execute()) {
+                /**
+                 * Single result is a model object containing just the
+                 * fields from the query (no NULLs).
+                 *
+                 * Multiple results come back as an array of model objects
+                 */
+                if ($this->q_limit && $this->q_limit == 1) {
+                    $result = $stmt->fetchObject($this->model);
+                    if (method_exists($result, 'init')) {
+                        $result->init();
+                    }
+                    return $result = $this->clean_values($result);
+                } else {
+                    $results = $stmt->fetchAll(PDO::FETCH_CLASS, $this->model);
+                    foreach ($results as $result) {
+                        if (method_exists($result, 'init')) {
+                            $result->init();
+                        }
+                        $result = $this->clean_values($result);
+                    }
+                    $result = $results;
                 }
-                $result = $this->clean_values($result);
+                return $result;
             }
-            $result = $results;
+        } catch (Exception $e) {
+            $this->error = $e->getMessage();
+            return false;
         }
-
-        return $result;
     }
 
     /**

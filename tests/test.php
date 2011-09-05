@@ -288,7 +288,6 @@ class ModelTest extends PHPUnit_Framework_TestCase
 		$model = new TestModel($dbh);
 		$model->id(3);
 		$result = $model->exec();
-
 		$this->assertInstanceOf('TestModel', $result);
 		$this->assertEquals('3', $result->id);
 		$this->assertEquals('flaneur.txt', $result->filename);
@@ -459,6 +458,11 @@ class ModelTest extends PHPUnit_Framework_TestCase
 		$model->reset()->all(array('email' => 'heffalump@email.com'));
 		$result = $model->exec();
 		$this->assertEmpty($result);
+
+		$model->reset()->all()->get('paragraph');
+		$result = $model->exec();
+		$this->assertEmpty($result);
+		$this->assertContains("SQLSTATE[42S22]: Column not found: 1054 Unknown column 'paragraph' in 'field list'", $model->error);
 	}
 
 
