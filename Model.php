@@ -676,6 +676,9 @@ class Model
         return $this;
     }
 
+    /**
+     * Get the last record from a set
+     */
     public function last()
     {
         $this->q_limit = 1;
@@ -749,22 +752,50 @@ class Model
 
         $stmt->execute();
 
+        /**
+         * Single result is a model object containing just the
+         * fields from the query (no NULLs).
+         *
+         * Multiple results come back as an array of model objects
+         */
         if ($this->q_limit && $this->q_limit == 1) {
             $result = $stmt->fetchObject($this->model);
             if (method_exists($result, 'init')) {
                 $result->init();
             }
+            return $result = $this->clean_values($result);
         } else {
             $results = $stmt->fetchAll(PDO::FETCH_CLASS, $this->model);
             foreach ($results as $result) {
                 if (method_exists($result, 'init')) {
                     $result->init();
                 }
+                $result = $this->clean_values($result);
             }
             $result = $results;
         }
 
-        var_dump($result);
+        return $result;
+    }
+
+    /**
+     * Remove all non-field related values from object (DB result)
+     */
+    public function clean_values($result)
+    {
+        $fields        = array_flip(array_merge($this->field_names, $result->virtual_fields));
+        $object_fields = get_object_vars($result);
+        foreach ($object_fields as $property => $val) {
+            // Remove null values
+            if (is_null($result->$property)) {
+                unset($result->$property);
+            }
+            // Remove non-db related fields
+            if (!isset($fields[$property])) {
+                unset($result->$property);
+           }
+       }
+       return $result;
     }
 
     /**
@@ -779,7 +810,7 @@ class Model
                 'conditions' => 'q_conditions',
                 'fields'     => 'q_fields',
                 'columns'    => 'q_fields',
-                'offset'    => 'q_offset'
+                'offset'     => 'q_offset'
             );
         if ($key) {
             if (isset($map[$key])) {

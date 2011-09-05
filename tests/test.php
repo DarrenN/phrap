@@ -15,7 +15,7 @@ class TestModel extends Model
 
     public function init()
     {
-    	if ($this->filename) {
+    	if ($this->filename && $this->id) {
     		$this->virtual_field('file_hash', sha1($this->filename . $this->id));
     	}
     }
@@ -479,17 +479,19 @@ class ModelTest extends PHPUnit_Framework_TestCase
 		$this->assertEquals('5', $model->attr('offset'));
 		$model->limit(10, null);
 		$model->first()->id(3)->filter(null);
-		$model->exec();
-		$model->all()->id(3)->get(array('filename'));
-		$model->exec();
-		$model->all()->order('email')->get(array('filename'));
-		$model->exec();
-		$model->all()->order('id')->get(array('filename','id'))->first();
-		$model->exec();
-		$model->first()->order('id')->get(array('filename','id'));
-		$model->exec();
-		$model->last()->order('id')->get(array('filename','id'));
-		$model->exec();
+		$result = $model->exec();
+		var_dump($result);
+		$model->all()->get(array('filename','email'));
+		$result = $model->exec();
+		var_dump($result);
+		// $model->all()->order('email')->get(array('filename'));
+		// $model->exec();
+		// $model->all()->order('id')->get(array('filename','id'));
+		// $model->exec();
+		// $model->first()->order('id')->get(array('filename','id'));
+		// $model->exec();
+		// $model->last()->order('id')->get(array('filename','id'));
+		// $model->exec();
 	}
 
 }
