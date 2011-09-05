@@ -225,30 +225,124 @@ class ModelTest extends PHPUnit_Framework_TestCase
 			));
 		$result = $model->save();
 		$this->assertTrue($result);
+
+		// Removing the index forces an INSERT
+		// which mean a new record
+		$model->id = null;
+		$model->set(array(
+				'filename' => 'appelschnapps.txt',
+				'userid'   => 6,
+				'email'    => 'gazza@email.com'
+			));
+		$result = $model->save();
+		$this->assertInternalType('string', $result);
+		$this->assertEquals(5, $result);
 	}
 
 	/**
 	 * @depends testDbConnection
 	 */
-	public function testFindOne(DB $dbh)
+	 public function testQueryBuilder(DB $dbh)
+	 {
+	 	$model = new TestModel($dbh);
+		$model->id(1);
+		$this->assertEquals('1', $model->id);
+		$model->id(1)->limit(10);
+		$this->assertEquals('10', $model->attr('limit'));
+		$this->assertEquals('1', $model->attr('id'));
+		$model->id(3)->limit(10)->filter(array('filename' => 'monolith.txt'));
+		$this->assertEquals('3', $model->id);
+		$this->assertEquals('filename = :filename', $model->attr('filter'));
+		$this->assertEquals('filename = :filename', $model->attr('conditions'));
+		$model->get(array('id','filename','email'));
+		$this->assertEquals('id, filename, email', $model->attr('fields'));
+		$this->assertEquals('id, filename, email', $model->attr('columns'));
+		$model->limit(10, 5);
+		$this->assertEquals('10', $model->attr('limit'));
+		$this->assertEquals('5', $model->attr('offset'));
+	 }
+
+	/**
+	 * @depends testDbConnection
+	 */
+	public function testFindById(DB $dbh)
 	{
 		$model = new TestModel($dbh);
+		$model->id(3);
+		$result = $model->exec();
 
-		// Make sure we get back a TestModel Object in result
-		$result = $model->find('first');
-		$this->assertNotEmpty($result);
-		$this->assertInternalType('object', $result);
 		$this->assertInstanceOf('TestModel', $result);
 		$this->assertEquals('3', $result->id);
 		$this->assertEquals('flaneur.txt', $result->filename);
 		$this->assertEquals('info@email.com', $result->email);
+		$this->assertEquals('2', $result->userid);
 		$this->assertEquals('95985b32e8401aed3143a6c090dfca6c969fbf76', $result->file_hash);
-		
-		// Now lets check object itself as it should have been populated
-		$this->assertEquals('3', $model->id);
-		$this->assertEquals('flaneur.txt', $model->filename);
-		$this->assertEquals('info@email.com', $model->email);
-		$this->assertEquals('95985b32e8401aed3143a6c090dfca6c969fbf76', $model->file_hash);	
+	}
+
+	/**
+	 * @depends testDbConnection
+	 */
+	public function testFindFirst(DB $dbh)
+	{
+		$model = new TestModel($dbh);
+		$model->first();
+		$result = $model->exec();
+
+		$this->assertInstanceOf('TestModel', $result);
+		$this->assertEquals('3', $result->id);
+		$this->assertEquals('flaneur.txt', $result->filename);
+		$this->assertEquals('info@email.com', $result->email);
+		$this->assertEquals('2', $result->userid);
+		$this->assertEquals('95985b32e8401aed3143a6c090dfca6c969fbf76', $result->file_hash);
+
+		// pull first from multiple values
+		$model->first(array('filename' => 'appelschnapps.txt'));
+		$result = $model->exec();
+
+		$this->assertInstanceOf('TestModel', $result);
+		$this->assertEquals('4', $result->id);
+		$this->assertEquals('appelschnapps.txt', $result->filename);
+		$this->assertEquals('dazza@email.com', $result->email);
+		$this->assertEquals('3', $result->userid);
+		$this->assertEquals('daf0ee72d921da625e5e08a0c13283830e610a6a', $result->file_hash);
+	}
+
+	/**
+	 * @depends testDbConnection
+	 */
+	public function testFindLast(DB $dbh)
+	{
+		$model = new TestModel($dbh);
+		$model->last();
+		$result = $model->exec();
+
+		$this->assertInstanceOf('TestModel', $result);
+		$this->assertEquals('5', $result->id);
+		$this->assertEquals('appelschnapps.txt', $result->filename);
+		$this->assertEquals('gazza@email.com', $result->email);
+		$this->assertEquals('6', $result->userid);
+
+		$model = new TestModel($dbh);
+		$model->last(array('email' => 'dazza@email.com'));
+		$result = $model->exec();
+
+		$this->assertInstanceOf('TestModel', $result);
+		$this->assertEquals('4', $result->id);
+		$this->assertEquals('appelschnapps.txt', $result->filename);
+		$this->assertEquals('dazza@email.com', $result->email);
+		$this->assertEquals('3', $result->userid);
+		$this->assertEquals('daf0ee72d921da625e5e08a0c13283830e610a6a', $result->file_hash);
+
+		// pull last from multiple values
+		$model = new TestModel($dbh);
+		$model->last(array('filename' => 'appelschnapps.txt'));
+		$result = $model->exec();
+
+		$this->assertInstanceOf('TestModel', $result);
+		$this->assertEquals('5', $result->id);
+		$this->assertEquals('appelschnapps.txt', $result->filename);
+		$this->assertEquals('gazza@email.com', $result->email);
+		$this->assertEquals('6', $result->userid);
 	}
 
 	/**
@@ -314,7 +408,7 @@ class ModelTest extends PHPUnit_Framework_TestCase
 		$result = $model->find('all');
 		$this->assertNotEmpty($result);
 		$this->assertInternalType('array', $result);
-		$this->assertEquals(2, count($result));
+		$this->assertEquals(3, count($result));
 
 		// Check some virtual field values
 		$this->assertEquals('95985b32e8401aed3143a6c090dfca6c969fbf76', $result[0]->file_hash);
@@ -352,42 +446,6 @@ class ModelTest extends PHPUnit_Framework_TestCase
 		$this->assertEquals('dazza@email.com', $result[0]->email);
 		$this->assertEquals('daf0ee72d921da625e5e08a0c13283830e610a6a', $result[0]->file_hash);
 	}
-
-	// /**
-	//  * @depends testDbConnection
-	//  */
-	// public function testFirst(DB $dbh)
-	// {
-	// 	$model = new TestModel($dbh);
-	// 	$result = $model->first();
-	// 	$this->assertNotEmpty($result);
-	// 	$this->assertInternalType('object', $result);
-	// 	$this->assertInstanceOf('TestModel', $result);
-	// }
-
-	// /**
-	//  * @depends testDbConnection
-	//  */
-	// public function testFirstWithConditions(DB $dbh)
-	// {
-	// 	$model = new TestModel($dbh);
-	// 	$result = $model->first(array('id' => 3));
-	// 	$this->assertEquals('3', $result->id);
-	// 	$this->assertEquals('flaneur.txt', $result->filename);
-	// 	$this->assertEquals('info@email.com', $result->email);
-	// 	$this->assertEquals('95985b32e8401aed3143a6c090dfca6c969fbf76', $result->file_hash);
-	// }
-
-	// /**
-	//  * @depends testDbConnection
-	//  */
-	// public function testFirstWithFields(DB $dbh)
-	// {
-	// 	$model = new TestModel($dbh);
-	// 	$result = $model->first(null, array('id', 'filename'));
-	// 	$this->assertEquals('3', $result->id);
-	// 	$this->assertEquals('flaneur.txt', $result->filename);
-	// }
 
 	/**
 	 * @depends testDbConnection
@@ -462,28 +520,13 @@ class ModelTest extends PHPUnit_Framework_TestCase
 	public function testChain(DB $dbh)
 	{
 		$model = new TestModel($dbh);
-		$model->id(1);
-		$this->assertEquals('1', $model->id);
-		$model->id(1)->limit(10);
-		$this->assertEquals('10', $model->attr('limit'));
-		$this->assertEquals('1', $model->attr('id'));
-		$model->id(3)->limit(10)->filter(array('filename' => 'monolith.txt'));
-		$this->assertEquals('3', $model->id);
-		$this->assertEquals('filename = :filename', $model->attr('filter'));
-		$this->assertEquals('filename = :filename', $model->attr('conditions'));
-		$model->get(array('id','filename','email'));
-		$this->assertEquals('id, filename, email', $model->attr('fields'));
-		$this->assertEquals('id, filename, email', $model->attr('columns'));
-		$model->limit(10, 5);
-		$this->assertEquals('10', $model->attr('limit'));
-		$this->assertEquals('5', $model->attr('offset'));
-		$model->limit(10, null);
+
 		$model->first()->id(3)->filter(null);
 		$result = $model->exec();
-		var_dump($result);
+		//var_dump($result);
 		$model->all()->get(array('filename','email'));
 		$result = $model->exec();
-		var_dump($result);
+		//var_dump($result);
 		// $model->all()->order('email')->get(array('filename'));
 		// $model->exec();
 		// $model->all()->order('id')->get(array('filename','id'));

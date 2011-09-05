@@ -660,29 +660,48 @@ class Model
     /**
      * Get all records - no Limit
      */
-    public function all()
+    public function all($conditions = null)
     {
         $this->q_limit = null;
+
+        if ($conditions) {
+            $this->filter($conditions);
+        }
+
         return $this;
     }
 
     /**
      * Get first record - LIMIT = 1
      */
-    public function first()
+    public function first($conditions = null)
     {
         $this->q_limit = 1;
         $this->q_direction = null;
+
+        if ($conditions) {
+            $this->filter($conditions);
+        }
+
         return $this;
     }
 
     /**
      * Get the last record from a set
      */
-    public function last()
+    public function last($conditions = null)
     {
         $this->q_limit = 1;
-        $this->q_direction = ' DESC';
+        $this->q_direction = 'DESC';
+
+        if (!$this->q_order) {
+            $this->order('id');
+        }
+
+        if ($conditions) {
+            $this->filter($conditions);
+        }
+
         return $this;
     }
 
@@ -715,6 +734,13 @@ class Model
     {
         $sql = "SELECT $this->q_fields FROM $this->table";
 
+        // If an ID is set, then we are only getting one
+        // record. That's the deal.
+        if ($this->id && !$this->q_conditions) {
+            $this->filter(array('id' => $this->id));
+            $this->q_limit = 1;
+        }
+
         if ($this->q_conditions) {
             $sql .=  " WHERE $this->q_conditions";
         }
@@ -724,7 +750,7 @@ class Model
         }
 
         if ($this->q_direction) {
-            $sql .=  "$this->q_direction";
+            $sql .=  " $this->q_direction";
         }
 
         if ($this->q_limit) {
@@ -783,6 +809,9 @@ class Model
      */
     public function clean_values($result)
     {
+        if (!$result) {
+            return false;
+        }
         $fields        = array_flip(array_merge($this->field_names, $result->virtual_fields));
         $object_fields = get_object_vars($result);
         foreach ($object_fields as $property => $val) {
