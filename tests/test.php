@@ -375,6 +375,8 @@ class ModelTest extends PHPUnit_Framework_TestCase
 	public function testFindAll(DB $dbh)
 	{
 		$model = new TestModel($dbh);
+
+		// find all (SELECT *)
 		$model->all();
 		$results = $model->exec();
 
@@ -390,6 +392,7 @@ class ModelTest extends PHPUnit_Framework_TestCase
 			}
 		}
 
+		// find all by filename
 		$model->all(array('filename' => 'appelschnapps.txt'));
 		$results = $model->exec();
 
@@ -406,6 +409,7 @@ class ModelTest extends PHPUnit_Framework_TestCase
 			}
 		}
 
+		// find all returning col filename
 		$model->reset()->all()->get('filename');
 		$results = $model->exec();
 
@@ -415,6 +419,23 @@ class ModelTest extends PHPUnit_Framework_TestCase
 		foreach ($results as $result) {
 			$this->assertInstanceOf('TestModel', $result);
 			$this->assertObjectHasAttribute('filename', $result);
+		}
+
+		// find all by filename returning cols: email filename & id
+		$model->reset()->all(array('filename' => 'appelschnapps.txt'))->get(array('email','filename','id'));
+		$results = $model->exec();
+
+		$this->assertNotEmpty($results);
+		$this->assertInternalType('array', $results);
+		$this->assertEquals(2, count($results));
+
+		$properties = array('id','email','filename','file_hash');
+		foreach ($results as $result) {
+			$this->assertInstanceOf('TestModel', $result);
+			foreach ($properties as $property) {
+				$this->assertObjectHasAttribute($property, $result);
+				$this->assertEquals('appelschnapps.txt', $result->filename);
+			}
 		}
 
 	}
