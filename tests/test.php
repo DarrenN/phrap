@@ -492,9 +492,11 @@ class ModelTest extends PHPUnit_Framework_TestCase
 		$result = $model->query('SELECT * FROM test WHERE id = :id', array('id' => 40));
 		$this->assertFalse($result);
 
+		$model->reset();
+
 		// Make a non-returning query (INSERT, REPLACE INTO, etc)
 		$values = array(
-			'id' => 4,
+			'id' => 5,
 			'filename' => 'mule.txt',
 			'email' => 'gazza@email.com'
 			);
@@ -502,9 +504,10 @@ class ModelTest extends PHPUnit_Framework_TestCase
 		$this->assertTrue($result);
 
 		// Now test that the REPLACE INTO query worked
-		$result = $model->find('first',array('id' => 4));
+		$model->id(5);
+		$result = $model->exec();
 		$this->assertNotEmpty($result);
-		$this->assertEquals('4', $result->id);
+		$this->assertEquals('5', $result->id);
 		$this->assertEquals('mule.txt', $result->filename);
 		$this->assertEquals('gazza@email.com', $result->email);
 
@@ -515,45 +518,22 @@ class ModelTest extends PHPUnit_Framework_TestCase
 	 */
 	public function testDelete(DB $dbh)
 	{
-		// $model = new TestModel($dbh);
-
-		// $this->assertTrue($model->delete(3));
-		// $this->assertFalse($model->delete(42));
-
-
-		// $model->find('first');
-
-		// $this->assertEquals('4', $model->id);
-		// $this->assertTrue($model->delete());
-		// $this->assertFalse($model->delete());
-		// $this->assertObjectHasAttribute('file_hash', $model);
-		// $this->assertObjectHasAttribute('id', $model);
-		// $this->assertNull($model->id);
-		// $this->assertNull($model->email);
-		// $this->assertNull($model->file_hash);
-	}
-
-	/**
-	 * @depends testDbConnection
-	 */
-	public function testChain(DB $dbh)
-	{
 		$model = new TestModel($dbh);
 
-		$model->first()->id(3)->filter(null);
+		$this->assertTrue($model->delete(3));
+		$this->assertFalse($model->delete(42));
+
+		$model->first();
 		$result = $model->exec();
-		//var_dump($result);
-		$model->all()->get(array('filename','email'));
-		$result = $model->exec();
-		//var_dump($result);
-		// $model->all()->order('email')->get(array('filename'));
-		// $model->exec();
-		// $model->all()->order('id')->get(array('filename','id'));
-		// $model->exec();
-		// $model->first()->order('id')->get(array('filename','id'));
-		// $model->exec();
-		// $model->last()->order('id')->get(array('filename','id'));
-		// $model->exec();
+
+		$this->assertEquals('4', $result->id);
+		$model->id($result->id);
+		$this->assertTrue($model->delete());
+		$this->assertFalse($model->delete());
+		$this->assertObjectHasAttribute('file_hash', $result);
+		$this->assertObjectHasAttribute('id', $result);
+		$this->assertNull($model->id);
+		$this->assertNull($model->email);
 	}
 
 }
