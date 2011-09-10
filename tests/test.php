@@ -392,8 +392,8 @@ class ModelTest extends PHPUnit_Framework_TestCase
 		}
 
 		// find all by filename
-		$model->all(array('filename' => 'appelschnapps.txt'));
-		$results = $model->exec();
+		$results = $model->all(array('filename' => 'appelschnapps.txt'))->exec();
+		//$results = $model->exec();
 
 		$this->assertNotEmpty($results);
 		$this->assertInternalType('array', $results);

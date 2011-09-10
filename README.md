@@ -62,17 +62,85 @@ $file->set(array('filename' => 'heffalump.txt', 'codswoddle' => 'phiminster'));
 // Save
 $file->save();
 
-// Query
-$result = $file->find('first');
-$result = $file->find('all');
+// Queries
+// Queries are built up by chaining together methods and then
+// executing them. This allows you to operate on your queries
+// before hitting the DB. The pattern is similar to Ruby Sequel.
+ 
+// FIND BY ID
+$model->id(3);
+$result = $model->exec();
 
-// Query with conditions
-$result = $file->find('first', array('email' => 'dazza@email.com'));
+// Returns a Model object:
+object(TestModel) {
+  ["id"]=>
+  string(1) "3"
+  ["filename"]=>
+  string(11) "flaneur.txt"
+  ["userid"]=>
+  string(1) "2"
+  ["email"]=>
+  string(14) "info@email.com"
+  ["file_hash"]=>
+  string(40) "95985b32e8401aed3143a6c090dfca6c969fbf76"
+}
 
-// Query with conditions & field whitelist
-$result = $file->find('first', array('email' => 'dazza@email.com'), array('id','email'));
+// FIND FIRST
+$model->first();
+$result = $model->exec();
 
-// Raw but Safe Query with named paramter array
+// FIND FIRST WITH CONDITIONS
+$model->first(array('filename' => 'appelschnapps.txt'));
+$result = $model->exec();
+
+// GET SINGLE COLUMN FROM FIRST ENTRY
+$model->first()->get('filename');
+$result = $model->exec();
+
+// Returns a Model object:
+object(TestModel) {
+  ["filename"]=>
+  string(11) "flaneur.txt"
+}
+
+// FIND LAST
+$result = $model->last()->exec();
+
+// FIND ALL
+$results = $model->all()->exec();
+
+// Returns an array of model objects:
+array(3) {
+  [0]=>
+  object(TestModel)#203 (5) {
+    ["id"]=>
+    string(1) "3"
+    ["filename"]=>
+    string(11) "flaneur.txt"
+    ["userid"]=>
+    string(1) "2"
+    ["email"]=>
+    string(14) "info@email.com"
+    ["file_hash"]=>
+    string(40) "95985b32e8401aed3143a6c090dfca6c969fbf76"
+  }
+  [1]=>...
+}
+
+// FIND ALL WITH CONDITION
+$results = $model->all(array('filename' => 'appelschnapps.txt'))->exec();
+
+// FIND ALL RETURNING JUST A SPECIFIC COLUMN
+$model->all()->get('filename')->exec();
+
+// FIND ALL BY FILENAME RETURNING COLS: EMAIL FILENAME & ID
+$model->all(array('filename' => 'appelschnapps.txt'))->get(array('email','filename','id'));
+$results = $model->exec();
+
+// Raw queries: you can also make raw queries but still get the 
+// benefits of parameterized inputs and PDO's escaping
+
+// Raw but Safe Query with named parameter array
 $result = $file->query('SELECT * FROM files WHERE email = :email ORDER BY userid LIMIT 1', array(':email' => 'dazza@email.com'));
 
 // Raw but Safe Query with single string parameter
@@ -94,7 +162,7 @@ $file->find('first');
 $file->delete();
 
 // Init (object constructor)
-public function init() - this code will run when the model is populated by DB results.
+public function init() // this code will run when the model is populated by DB results.
 
 // Virtual fields
 // Create calculated fields on the fly inside init();
